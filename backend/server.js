@@ -4,8 +4,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ============================================
-// CORS - Allow all origins
+// CORS - FULLY ENABLED
 // ============================================
+// Allow all origins with proper CORS headers
 app.use(cors({
   origin: '*',
   credentials: true,
@@ -13,8 +14,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
+// Handle preflight requests
 app.options('*', cors());
 
+// Additional CORS headers
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
@@ -98,7 +101,6 @@ app.post('/api/telegram/callback', async (req, res) => {
       pendingRequests[requestId].status = 'approved';
       console.log('✅ Login approved for request:', requestId);
       
-      // Send confirmation to admin
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
