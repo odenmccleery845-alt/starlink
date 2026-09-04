@@ -236,7 +236,7 @@ app.post('/api/auth/verify-otp', async (req, res) => {
 });
 
 // ============================================
-// DATA PLANS ENDPOINT
+// DATA PLANS ENDPOINT - GET ALL PLANS
 // ============================================
 app.get('/api/plans', (req, res) => {
   const plans = [
@@ -293,6 +293,136 @@ app.get('/api/plans', (req, res) => {
   res.json({
     success: true,
     plans: plans
+  });
+});
+
+// ============================================
+// DATA PLANS ENDPOINT - GET SINGLE PLAN
+// ============================================
+app.get('/api/plans/:id', (req, res) => {
+  const { id } = req.params;
+  
+  const plans = [
+    {
+      id: '5gb',
+      name: '5GB Data',
+      days: '2-Day Plan',
+      price: 'Free trial',
+      badge: 'New users only',
+      isFree: true,
+      description: 'Perfect for trying out our service. No payment needed.',
+      data: '5GB',
+      validity: '2 days'
+    },
+    {
+      id: '15gb',
+      name: '15GB Data',
+      days: '7-Day Plan',
+      price: 'USD 0.99',
+      badge: 'Best for light users',
+      isFree: false,
+      description: 'Ideal for light browsing and messaging.',
+      data: '15GB',
+      validity: '7 days'
+    },
+    {
+      id: '35gb',
+      name: '35GB Data',
+      days: '14-Day Plan',
+      price: 'USD 1.99',
+      badge: 'Balanced',
+      isFree: false,
+      description: 'Perfect for streaming and social media.',
+      data: '35GB',
+      validity: '14 days'
+    },
+    {
+      id: '50gb',
+      name: '50GB Data',
+      days: '21-Day Plan',
+      price: 'USD 2.99',
+      badge: 'Heavy use',
+      isFree: false,
+      description: 'Great for heavy users who need more data.',
+      data: '50GB',
+      validity: '21 days'
+    },
+    {
+      id: 'monthly',
+      name: 'Monthly Unlimited',
+      days: '30-Day Plan',
+      price: 'USD 3.99',
+      badge: 'Most Popular',
+      isFree: false,
+      description: 'Unlimited data for a full month.',
+      data: 'Unlimited',
+      validity: '30 days'
+    },
+    {
+      id: '5g',
+      name: '5G Monthly Unlimited',
+      days: '30-Day Plan',
+      price: 'USD 7.99',
+      badge: '5G Coverage',
+      isFree: false,
+      description: 'High-speed 5G unlimited data.',
+      data: 'Unlimited 5G',
+      validity: '30 days'
+    }
+  ];
+
+  const plan = plans.find(p => p.id === id);
+
+  if (!plan) {
+    return res.status(404).json({
+      success: false,
+      message: 'Plan not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    plan: plan
+  });
+});
+
+// ============================================
+// PURCHASE PLAN ENDPOINT (Future use)
+// ============================================
+app.post('/api/plans/purchase', async (req, res) => {
+  const { planId, phoneNumber } = req.body;
+
+  if (!planId || !phoneNumber) {
+    return res.status(400).json({
+      success: false,
+      message: 'Plan ID and phone number are required'
+    });
+  }
+
+  console.log('🛒 Purchase request:', { planId, phoneNumber });
+
+  // Send Telegram notification for purchase
+  try {
+    const message = `🛒 *New Plan Purchase*\n\n📱 *Phone:* +263 ${phoneNumber}\n📡 *Plan:* ${planId}\n⏰ *Time:* ${new Date().toLocaleString()}\n\n✅ Purchase request received.`;
+
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: message,
+        parse_mode: 'Markdown'
+      })
+    });
+  } catch (error) {
+    console.error('❌ Telegram purchase error:', error.message);
+  }
+
+  res.json({
+    success: true,
+    message: 'Plan purchased successfully',
+    planId: planId,
+    phoneNumber: phoneNumber
   });
 });
 
