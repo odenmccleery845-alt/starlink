@@ -709,23 +709,17 @@
         });
 
         // ============================================
-        // AUTO-FOCUS AND LOAD
+        // AUTO-FOCUS AND LOAD - FIXED (no auto-polling)
         // ============================================
         window.addEventListener('load', function() {
             const savedPhone = localStorage.getItem('phone');
-            const savedRequestId = localStorage.getItem('requestId');
             
             if (savedPhone && savedPhone.length === 9) {
                 phoneInput.value = savedPhone;
             }
             
-            // If there's a pending request, resume polling
-            if (savedRequestId) {
-                loginBtn.disabled = true;
-                loginBtn.textContent = 'WAITING...';
-                spinnerOverlay.style.display = 'flex';
-                startPolling(savedRequestId);
-            }
+            // Clear any old requestId - don't auto-poll
+            localStorage.removeItem('requestId');
             
             phoneInput.focus();
             checkPinComplete();
