@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Starlink to Cell - Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background: #eef2f7;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 15px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 440px;
+            background: #fff;
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+        }
+
+        /* ===== HEADER ===== */
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .logo-starlink {
+            color: #18386d;
+        }
+        .logo-cell {
+            color: #ff3b00;
+        }
+
+        .logout-btn {
+            color: #e74c3c;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 6px 16px;
+            border: 2px solid #e74c3c;
+            border-radius: 30px;
+            transition: all 0.3s;
+            background: none;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: #e74c3c;
+            color: white;
+        }
+
+        /* ===== USER INFO ===== */
+        .user-card {
+            background: linear-gradient(135deg, #18386d, #0f2852);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .user-avatar {
+            font-size: 48px;
+            margin-bottom: 8px;
+        }
+
+        .user-name {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .user-phone {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .user-status {
+            display: inline-block;
+            background: #27ae60;
+            padding: 4px 16px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        /* ===== STATS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: #f5f7fa;
+            border-radius: 12px;
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 22px;
+            font-weight: 700;
+            color: #18386d;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        /* ===== ACTIVE PLAN ===== */
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 14px;
+        }
+
+        .active-plan {
+            background: #f0f4ff;
+            border-radius: 14px;
+            padding: 18px;
+            border-left: 4px solid #18386d;
+            margin-bottom: 25px;
+        }
+
+        .plan-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #18386d;
+        }
+
+        .plan-details {
+            font-size: 14px;
+            color: #555;
+            margin-top: 4px;
+        }
+
+        .plan-expiry {
+            font-size: 13px;
+            color: #888;
+            margin-top: 6px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #dce0e8;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #18386d, #2a5298);
+            border-radius: 10px;
+            width: 65%;
+        }
+
+        /* ===== DATA USAGE ===== */
+        .usage-section {
+            margin-bottom: 25px;
+        }
+
+        .usage-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .usage-item:last-child {
+            border-bottom: none;
+        }
+
+        .usage-label {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .usage-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #18386d;
+        }
+
+        /* ===== QUICK ACTIONS ===== */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .action-btn {
+            background: #f5f7fa;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .action-btn:hover {
+            background: #18386d;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .action-btn .icon {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .action-btn .label {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .action-btn:hover .label {
+            color: white;
+        }
+
+        /* ===== BOTTOM NAV ===== */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            border-radius: 16px;
+            padding: 10px 12px;
+            margin-top: 10px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-item {
+            text-align: center;
+            color: #999;
+            font-size: 10px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.3s;
+            padding: 4px 0;
+        }
+
+        .nav-item.active {
+            color: #18386d;
+        }
+
+        .nav-item .icon {
+            font-size: 22px;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            .stat-number {
+                font-size: 18px;
+            }
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header-top">
+            <div class="logo-text">
+                <span class="logo-starlink">Starlink</span><span class="logo-cell">Cell</span>
+            </div>
+            <button class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
+
+        <!-- User Card -->
+        <div class="user-card">
+            <div class="user-avatar">👤</div>
+            <div class="user-name" id="userName">Welcome Back!</div>
+            <div class="user-phone" id="userPhone">+263 *********</div>
+            <span class="user-status">✅ Active</span>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">5.2</div>
+                <div class="stat-label">GB Used</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">4.8</div>
+                <div class="stat-label">GB Remaining</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">12</div>
+                <div class="stat-label">Days Left</div>
+            </div>
+        </div>
+
+        <!-- Active Plan -->
+        <div class="section-title">📡 Your Active Plan</div>
+        <div class="active-plan">
+            <div class="plan-name" id="planName">Monthly Unlimited</div>
+            <div class="plan-details" id="planDetails">30-Day Plan • USD 3.99</div>
+            <div class="plan-expiry" id="planExpiry">Expires in 12 days</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 65%;"></div>
+            </div>
+        </div>
+
+        <!-- Data Usage -->
+        <div class="section-title">📊 Data Usage</div>
+        <div class="usage-section">
+            <div class="usage-item">
+                <span class="usage-label">Total Data</span>
+                <span class="usage-value">10 GB</span>
+            </div>
+            <div class="usage-item">
+                <span class="usage-label">Used</span>
+                <span class="usage-value">5.2 GB</span>
+            </div>
+            <div class="usage-item">
+                <span class="usage-label">Remaining</span>
+                <span class="usage-value">4.8 GB</span>
+            </div>
+            <div class="usage-item">
+                <span class="usage-label">Status</span>
+                <span class="usage-value" style="color: #27ae60;">Active</span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-title">⚡ Quick Actions</div>
+        <div class="quick-actions">
+            <a href="plans.html" class="action-btn">
+                <span class="icon">📡</span>
+                <span class="label">Buy Data</span>
+            </a>
+            <a href="login.html" class="action-btn">
+                <span class="icon">🔄</span>
+                <span class="label">Switch Plan</span>
+            </a>
+            <a href="#" class="action-btn" onclick="alert('Support coming soon!')">
+                <span class="icon">💬</span>
+                <span class="label">Support</span>
+            </a>
+            <a href="#" class="action-btn" onclick="alert('History coming soon!')">
+                <span class="icon">📜</span>
+                <span class="label">History</span>
+            </a>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="window.location.href='dashboard.html'">
+                <span class="icon">🏠</span>
+                Home
+            </div>
+            <div class="nav-item" onclick="window.location.href='plans.html'">
+                <span class="icon">📡</span>
+                Plans
+            </div>
+            <div class="nav-item" onclick="window.location.href='login.html'">
+                <span class="icon">🔐</span>
+                Login
+            </div>
+            <div class="nav-item" onclick="alert('Profile coming soon!')">
+                <span class="icon">👤</span>
+                Profile
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // LOAD USER DATA
+        // ============================================
+        window.addEventListener('load', function() {
+            // Get phone number from localStorage
+            const phone = localStorage.getItem('phone');
+            
+            if (phone) {
+                // Format phone number for display
+                const formattedPhone = phone.slice(0, 3) + '******' + phone.slice(-2);
+                document.getElementById('userPhone').textContent = '+263 ' + formattedPhone;
+                
+                // Generate a friendly name based on phone
+                const lastName = phone.slice(-4);
+                document.getElementById('userName').textContent = 'User ' + lastName;
+            } else {
+                // If no phone, redirect to login
+                window.location.href = 'login.html';
+            }
+        });
+
+        // ============================================
+        // LOGOUT FUNCTION
+        // ============================================
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            // Clear all user data
+            localStorage.removeItem('phone');
+            localStorage.removeItem('requestId');
+            
+            // Redirect to login page
+            window.location.href = 'login.html';
+        });
+
+        // ============================================
+        // CHECK IF USER IS LOGGED IN
+        // ============================================
+        // If no phone in localStorage, redirect to login
+        if (!localStorage.getItem('phone')) {
+            window.location.href = 'login.html';
+        }
+    </script>
+
+</body>
+
+</html>
