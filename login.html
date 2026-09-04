@@ -505,6 +505,39 @@
         let pollingActive = false;
 
         // ============================================
+        // TEST BACKEND CONNECTION ON LOAD
+        // ============================================
+        async function testBackendConnection() {
+            try {
+                console.log('🔍 Testing backend connection...');
+                console.log('📍 Testing:', `${API_URL}/health`);
+                
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('📥 Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ Backend connected:', data);
+                showStatus('✅ Connected to server', 'success');
+                setTimeout(hideStatus, 3000);
+                return true;
+            } catch (error) {
+                console.error('❌ Backend connection failed:', error);
+                showStatus('⚠️ Cannot connect to server. Please refresh and try again.', 'error');
+                return false;
+            }
+        }
+
+        // ============================================
         // CHECK PIN COMPLETE
         // ============================================
         function checkPinComplete() {
@@ -641,6 +674,8 @@
             const phone = phoneInput.value.trim();
             const pin = Array.from(pinBoxes).map(box => box.value).join('');
 
+            console.log('🔑 Login attempt:', { phone, pinLength: pin.length });
+
             // Validate phone
             if (!phone) {
                 showStatus('Please enter your phone number', 'error');
@@ -670,17 +705,29 @@
             localStorage.setItem('phone', phone);
 
             try {
+                console.log('📤 Sending login request to:', `${API_URL}/auth/login`);
+                
                 // Send login request to backend
                 const response = await fetch(`${API_URL}/auth/login`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({
                         phoneNumber: phone,
                         pin: pin
                     })
                 });
+
+                console.log('📥 Response status:', response.status);
+                
+                // Check if response is OK
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Server error response:', errorText);
+                    throw new Error(`Server returned ${response.status}: ${errorText || response.statusText}`);
+                }
 
                 const data = await response.json();
                 console.log('📥 Login response:', data);
@@ -719,13 +766,17 @@
         // ============================================
         // AUTO-FOCUS AND LOAD
         // ============================================
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
             const savedPhone = localStorage.getItem('phone');
             if (savedPhone && savedPhone.length === 9) {
                 phoneInput.value = savedPhone;
             }
             phoneInput.focus();
             checkPinComplete();
+            
+            // Test backend connection
+            await testBackendConnection();
+            
             console.log('✅ Login page fully loaded and ready');
             console.log('====================================');
         });
