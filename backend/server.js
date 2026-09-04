@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const fetch = require('node-fetch'); // <-- ADD THIS LINE
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -35,7 +36,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ============================================
-// HEALTH CHECK ENDPOINT - ADD THIS HERE!
+// HEALTH CHECK ENDPOINT
 // ============================================
 app.get('/api/health', (req, res) => {
   res.json({
