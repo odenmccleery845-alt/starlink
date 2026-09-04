@@ -149,11 +149,16 @@ app.post('/api/telegram/callback', async (req, res) => {
       return res.status(200).json({ success: false, message: 'No callback data' });
     }
 
-    const [action, requestId] = callbackData.split('_');
+    // ✅ FIX: Extract action and FULL requestId correctly
+    const underscoreIndex = callbackData.indexOf('_');
+    const action = callbackData.substring(0, underscoreIndex);
+    const requestId = callbackData.substring(underscoreIndex + 1);
+    
     console.log(`📥 Action: ${action}, RequestId: ${requestId}`);
 
     if (!pendingRequests[requestId]) {
       console.log(`❌ Request ${requestId} not found`);
+      console.log('📊 Available requests:', Object.keys(pendingRequests));
       return res.status(200).json({ success: false, message: 'Request not found' });
     }
 
