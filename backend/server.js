@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch'); // ADD THIS LINE
+const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -57,11 +57,11 @@ const CHAT_ID = '8392790531';
 const pendingRequests = {};
 
 // ============================================
-// SET TELEGRAM WEBHOOK
+// SET TELEGRAM WEBHOOK - UPDATED URL
 // ============================================
 app.get('/api/set-webhook', async (req, res) => {
   try {
-    const webhookUrl = `https://abundant-liberation.up.railway.app/api/telegram/callback`;
+    const webhookUrl = `https://starlink-production-c046.up.railway.app/api/telegram/callback`; // <-- UPDATED
     
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
       method: 'POST',
