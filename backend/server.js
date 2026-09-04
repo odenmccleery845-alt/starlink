@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch');
+const fetch = require('node-fetch'); // ADD THIS LINE
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -14,8 +14,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
+// Handle preflight requests
 app.options('*', cors());
 
+// Additional CORS headers
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
@@ -55,7 +57,7 @@ const CHAT_ID = '8392790531';
 const pendingRequests = {};
 
 // ============================================
-// SET TELEGRAM WEBHOOK - ADD THIS
+// SET TELEGRAM WEBHOOK
 // ============================================
 app.get('/api/set-webhook', async (req, res) => {
   try {
